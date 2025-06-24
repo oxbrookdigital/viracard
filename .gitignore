@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Local environment variables
+.env*.local
+.env # Also good to ignore generic .env if you ever use it for non-secret defaults that .env.local overrides
 
 # vercel
 .vercel
