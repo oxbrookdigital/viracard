@@ -1,47 +1,32 @@
 // app/(main)/dashboard/page.tsx
 
-"use client";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
+import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+import DashboardClient from "./DashboardClient"; // Import our client component
 
-import OnboardingForm from "@/components/dashboard/OnboardingForm";
-import CardPreview from "@/components/dashboard/CardPreview";
-import { CardDataProvider } from "@/contexts/CardDataProvider"; // Import the provider we will use
+// This is an async Server Component
+export default async function DashboardPage() {
+  // 1. Get the session to find the user's ID
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    // This should not happen due to middleware, but it's a good safeguard
+    redirect("/");
+  }
 
-// Exporting these types from here allows other components to import them easily.
-export type SocialLink = {
-  id: string; 
-  platform: 'instagram' | 'tiktok' | 'youtube' | 'x';
-  username: string;
-  followers: string;
-};
-export type CardData = {
-  name: string;
-  tagline: string;
-  socialLinks: SocialLink[];
-};
-
-
-export default function DashboardPage() {
-  return (
-    // We wrap everything in the CardDataProvider.
-    // This provider now manages all the state and logic.
-    <CardDataProvider>
-      <main className="min-h-screen bg-gray-100 p-4 sm:p-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          <div className="lg:col-span-2">
-            {/* The form no longer needs any props passed to it */}
-            <OnboardingForm /> 
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              {/* The preview card no longer needs any props passed to it */}
-              <CardPreview />
-            </div>
-          </div>
-
-        </div>
-      </main>
-    </CardDataProvider>
+  // 2. Fetch the user's full profile from Supabase
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*, onboarding_complete") // Select all fields including our flag
+    .eq("id", session.user.id)
+    .single();
+
+  // 3. Render the Client Component and pass the fetched profile data as a prop
+  return <DashboardClient initialProfile={profile} />;
 }
