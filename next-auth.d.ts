@@ -1,14 +1,19 @@
 // next-auth.d.ts
 
 import { DefaultSession } from "next-auth";
+import { JWT } from "next-auth/jwt"; // Import JWT
 
 declare module "next-auth" {
-    /**
-     * The `session` object is extended to include a user ID property.
-     */
-    interface Session {
-        user: {
-            id: string; // The user's unique ID from the provider
-        } & DefaultSession["user"];
-    }
+  interface Session {
+    user: {
+      id: string;
+    } & DefaultSession["user"];
+  }
+}
+
+// Add this new declaration for the JWT
+declare module "next-auth/jwt" {
+  interface JWT {
+    supabaseAccessToken?: string;
+  }
 }
