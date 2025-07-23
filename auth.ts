@@ -5,8 +5,6 @@ import GoogleProvider from "next-auth/providers/google";
 import { createClient } from "@supabase/supabase-js";
 
 export const authOptions: NextAuthOptions = {
-  // We no longer use an adapter.
-  
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -14,46 +12,67 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // We explicitly use the JWT strategy. This is now the source of truth.
   session: {
     strategy: "jwt",
   },
 
   callbacks: {
-    // The 'jwt' callback is the heart of our new strategy.
-    async jwt({ token, account, user }) {
-      // On the initial sign-in, the 'account' object is available.
-      if (account && user) {
-        // This is the bridge between NextAuth and Supabase
-        // We use the id_token from Google to sign the user into Supabase
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+    // The signIn callback runs when a user first signs in.
+    // This is the perfect place to create their profile in our database.
+    async signIn({ user, account }) {
+      if (!user.email || !account?.providerAccountId) {
+        return false; // Prevent sign-in if essential info is missing
+      }
+      
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
 
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: account.id_token!,
+      // Check if a profile already exists for this user
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", account.providerAccountId) // Look up by Google ID
+        .single();
+
+      // If no profile exists, create one
+      if (!profile) {
+        // Generate a unique username from the email
+        const base_username = user.email.split('@')[0];
+        const { data: usernameProfile } = await supabase.from('profiles').select('username').eq('username', base_username).single();
+        const final_username = usernameProfile ? `${base_username}${Math.floor(Math.random() * 1000)}` : base_username;
+
+        const { error } = await supabase.from("profiles").insert({
+          id: account.providerAccountId, // Use the Google ID as the primary key
+          email: user.email,
+          full_name: user.name,
+          avatar_url: user.image,
+          username: final_username, // Set the auto-generated username
+          onboarding_complete: false, // Default to false
         });
 
         if (error) {
-          console.error("Supabase signInWithIdToken error:", error);
-        } else if (data.session) {
-          // If Supabase sign-in is successful, we get a Supabase session
-          // We can add the Supabase access token and user ID to our NextAuth JWT
-          token.supabaseAccessToken = data.session.access_token;
-          token.sub = data.user.id; // This is the REAL Supabase Auth User UUID
+          console.error("Error creating profile:", error);
+          return false; // Prevent sign-in if profile creation fails
         }
+      }
+      return true; // Allow the sign-in
+    },
+    
+    // The jwt callback populates the session token
+    async jwt({ token, account }) {
+      if (account) {
+        // On sign-in, put the Google ID into the token's 'sub' (subject) claim
+        token.sub = account.providerAccountId;
       }
       return token;
     },
 
-    // The 'session' callback passes data from the JWT to the client-side session object
+    // The session callback populates the client-side session object
     async session({ session, token }) {
-      // We pass the Supabase access token and the correct user ID to the session
-      (session as any).supabaseAccessToken = token.supabaseAccessToken;
       if (token.sub) {
-        session.user.id = token.sub;
+        session.user.id = token.sub; // The user ID is now the Google ID
       }
       return session;
     },

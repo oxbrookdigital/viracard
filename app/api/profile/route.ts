@@ -6,6 +6,43 @@ import { authOptions } from "@/auth";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+// --- GET Handler for Public Profiles ---
+// This handles requests like GET /api/profile?username=johndoe
+export async function GET(request: NextRequest) {
+  try {
+    // Get the username from the URL's query string
+    const { searchParams } = new URL(request.url);
+    const username = searchParams.get("username");
+
+    if (!username) {
+      return NextResponse.json({ error: "Username is required" }, { status: 400 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("full_name, tagline, avatar_url, social_links, username")
+      .eq("username", username)
+      .single();
+
+    if (error || !profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(profile);
+
+  } catch (error) {
+    console.error("GET /api/profile error:", error);
+    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  }
+}
+
+
+// --- PATCH Handler for Updating Own Profile (No Changes Here) ---
 const profileUpdateSchema = z.object({
   tagline: z.string().max(100).optional(),
   socialLinks: z.array(z.object({
@@ -23,19 +60,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = session.user.id;
-
-    // --- THIS IS YOUR DEBUGGING STEP ---
-    console.log("Attempting to update profile for user ID:", userId);
-    // ------------------------------------
-
     const body = await request.json();
     const validatedData = profileUpdateSchema.parse(body);
-    
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -43,20 +73,15 @@ export async function PATCH(request: NextRequest) {
         social_links: validatedData.socialLinks,
         onboarding_complete: true,
       })
-      .eq("id", userId); 
-
+      .eq("id", userId);
     if (error) {
-      console.error("Supabase update error:", error);
-      throw new Error("Could not update profile in the database.");
+      throw error;
     }
-
     return NextResponse.json({ message: "Profile updated successfully!" });
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid data provided.", details: error.errors }, { status: 400 });
     }
-    console.error("An unexpected error occurred in PATCH /api/profile:", error);
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 }
