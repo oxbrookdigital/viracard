@@ -10,6 +10,7 @@ type CardData = {
   name: string;
   tagline: string;
   socialLinks: any[];
+  username: string; // <-- 1. Add username to the type definition
 };
 
 export default function UserProfilePage() {
@@ -25,8 +26,6 @@ export default function UserProfilePage() {
       const fetchProfile = async () => {
         try {
           setLoading(true);
-          // --- THIS IS THE ONLY CHANGE IN THIS FILE ---
-          // We now fetch from /api/profile?username=...
           const response = await fetch(`/api/profile?username=${username}`);
           
           if (!response.ok) {
@@ -39,6 +38,7 @@ export default function UserProfilePage() {
             name: profile.full_name || 'User',
             tagline: profile.tagline || '',
             socialLinks: profile.social_links || [],
+            username: profile.username || '', // <-- 2. Add the username to the state object
           });
         } catch (err: any) {
           setError(err.message);

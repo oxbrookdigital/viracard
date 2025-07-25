@@ -2,10 +2,12 @@
 
 "use client";
 
-// We define a type for the props this component expects
+import Link from "next/link"; // <-- 1. Import the Link component
+
 type CardData = {
   name: string;
   tagline: string;
+  username: string; // <-- 2. Make sure username is in the type
   socialLinks: {
     platform: string;
     followers: string;
@@ -39,7 +41,13 @@ export default function PublicCard({ cardData }: { cardData: CardData }) {
       <h2 className="text-2xl font-bold text-gray-800">{cardData.name}</h2>
       <p className="mt-1 text-gray-500 min-h-[20px]">{cardData.tagline}</p>
       
-      <div className="mt-6 w-full flex justify-center items-center gap-4 flex-wrap">
+      {/* Badges Placeholder */}
+      <div className="my-6 w-full border-t border-b border-gray-200 py-2">
+        <span className="text-sm font-medium text-gray-400">Badges will appear here</span>
+      </div>
+
+      {/* Social Links Section */}
+      <div className="w-full flex justify-center items-center gap-4 flex-wrap">
         {cardData.socialLinks.map((link, index) => (
           <div key={index} className="flex flex-col items-center p-2">
             <SocialIcon platform={link.platform} />
@@ -49,6 +57,19 @@ export default function PublicCard({ cardData }: { cardData: CardData }) {
             <span className="text-xs text-gray-400 capitalize">{link.platform}</span>
           </div>
         ))}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="w-full mt-8 flex flex-col sm:flex-row gap-3">
+        {/* This button is now wrapped in a Link to navigate to the full profile */}
+        <Link href={`/${cardData.username}/full`} className="w-full">
+          <button className="w-full px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300">
+            View Full Profile
+          </button>
+        </Link>
+        <button className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">
+          Collaborate
+        </button>
       </div>
     </div>
   );
