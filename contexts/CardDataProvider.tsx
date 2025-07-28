@@ -12,11 +12,21 @@ type CardDataContextType = {
   handleAddSocialLink: () => void;
   handleRemoveSocialLink: (id: string) => void;
   handleSocialLinkChange: (id: string, field: keyof SocialLink, value: string) => void;
+  handleCancel: () => void; // <-- 1. Add the handleCancel function to the type
 };
 
 const CardDataContext = createContext<CardDataContextType | undefined>(undefined);
 
-export function CardDataProvider({ children, initialProfile }: { children: ReactNode; initialProfile: Profile }) {
+// 2. Update the props to accept the handleCancel function
+export function CardDataProvider({ 
+  children, 
+  initialProfile, 
+  handleCancel 
+}: { 
+  children: ReactNode; 
+  initialProfile: Profile; 
+  handleCancel: () => void; 
+}) {
   const [cardData, setCardData] = useState<CardData>({
     name: initialProfile?.full_name || 'Your Name',
     tagline: initialProfile?.tagline || '',
@@ -32,16 +42,15 @@ export function CardDataProvider({ children, initialProfile }: { children: React
   };
 
   const handleRemoveSocialLink = (id: string) => {
-    // FIXED: Explicitly type 'link' as SocialLink
     setCardData(prev => ({ ...prev, socialLinks: prev.socialLinks.filter((link: SocialLink) => link.id !== id) }));
   };
 
   const handleSocialLinkChange = (id: string, field: keyof SocialLink, value: string) => {
-    // FIXED: Explicitly type 'link' as SocialLink
     setCardData(prev => ({ ...prev, socialLinks: prev.socialLinks.map((link: SocialLink) => (link.id === id ? { ...link, [field]: value } : link)) }));
   };
 
-  const value = { cardData, handleTaglineChange, handleAddSocialLink, handleRemoveSocialLink, handleSocialLinkChange };
+  // 3. Add the handleCancel function to the value object passed to the provider
+  const value = { cardData, handleTaglineChange, handleAddSocialLink, handleRemoveSocialLink, handleSocialLinkChange, handleCancel };
 
   return <CardDataContext.Provider value={value}>{children}</CardDataContext.Provider>;
 }

@@ -1,20 +1,21 @@
-// app/[username]/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import PublicCard from "@/components/profile/PublicCard";
 
 type CardData = {
+  id: string; // Add id to CardData
   name: string;
   tagline: string;
   socialLinks: any[];
-  username: string; // <-- 1. Add username to the type definition
+  username: string;
 };
 
 export default function UserProfilePage() {
   const params = useParams();
+  const { data: session } = useSession();
   const username = params.username as string;
 
   const [cardData, setCardData] = useState<CardData | null>(null);
@@ -35,10 +36,11 @@ export default function UserProfilePage() {
 
           const profile = await response.json();
           setCardData({
+            id: profile.id, // Ensure we store the id
             name: profile.full_name || 'User',
             tagline: profile.tagline || '',
             socialLinks: profile.social_links || [],
-            username: profile.username || '', // <-- 2. Add the username to the state object
+            username: profile.username || '',
           });
         } catch (err: any) {
           setError(err.message);
@@ -50,13 +52,16 @@ export default function UserProfilePage() {
     }
   }, [username]);
 
+  // Determine if the viewer is the owner
+  const isOwner = session?.user?.id === cardData?.id;
+
   if (loading) return <p className="text-center p-24 font-semibold">Loading Profile...</p>;
   if (error) return <p className="text-center p-24 font-semibold text-red-500">Error: {error}</p>;
   if (!cardData) return <p className="text-center p-24 font-semibold">Profile could not be loaded.</p>;
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <PublicCard cardData={cardData} />
+      <PublicCard cardData={cardData} isOwner={isOwner} />
     </main>
   );
 }

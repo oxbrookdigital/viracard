@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("full_name, tagline, avatar_url, social_links, username")
+      // FIX: Added 'id' to the selection list
+      .select("id, full_name, tagline, avatar_url, social_links, username")
       .eq("username", username)
       .single();
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
 }
 
 
-// --- PATCH Handler for Updating Own Profile (No Changes Here) ---
+// --- PATCH Handler for Updating Own Profile ---
 const profileUpdateSchema = z.object({
   tagline: z.string().max(100).optional(),
   socialLinks: z.array(z.object({
@@ -74,14 +75,19 @@ export async function PATCH(request: NextRequest) {
         onboarding_complete: true,
       })
       .eq("id", userId);
+      
     if (error) {
-      throw error;
+      console.error("Supabase update error:", error)
+      throw new Error("Could not update profile in the database.");
     }
+
     return NextResponse.json({ message: "Profile updated successfully!" });
+    
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid data provided.", details: error.errors }, { status: 400 });
     }
+    console.error("An unexpected error occurred in PATCH /api/profile:", error);
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 }
