@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
-import AuthButtons from "@/components/auth/AuthButtons";
+import SignInForm from "@/components/auth/SignInForm";
 
 export default async function Home() {
   // Check for a session on the server
@@ -14,18 +14,10 @@ export default async function Home() {
     redirect("/dashboard");
   }
 
-  // If no session, show the public landing page
+  // If no session, show the new sign-in form
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 text-center">
-      <div>
-        <h1 className="text-4xl font-bold">Your Influencer Profile. Polished.</h1>
-        <p className="mt-4 text-lg text-gray-600">
-          The Linktree-killer for creators who mean business.
-        </p>
-        <div className="mt-8">
-          <AuthButtons />
-        </div>
-      </div>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
+      <SignInForm />
     </main>
   );
 }
