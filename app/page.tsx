@@ -15,9 +15,5 @@ export default async function Home() {
   }
 
   // If no session, show the new sign-in form
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <SignInForm />
-    </main>
-  );
+  return <SignInForm />;
 }

@@ -2,7 +2,7 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
-import NextAuthProvider from "@/components/providers/NextAuthProvider"; // <-- Import
+import NextAuthProvider from "@/components/providers/NextAuthProvider";
 
 export const metadata: Metadata = {
   title: "ViraCard",
@@ -17,7 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <NextAuthProvider> {/* <-- Wrap your app */}
+        <NextAuthProvider>
           {children}
         </NextAuthProvider>
       </body>
