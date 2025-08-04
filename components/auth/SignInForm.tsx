@@ -2,6 +2,7 @@
 
 "use client"
 
+import Link from "next/link";
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Eye, EyeOff } from "lucide-react"
@@ -265,9 +266,9 @@ export default function SignInForm() {
 
           {/* Forgot password */}
           <div className="text-center mt-4">
-            <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+            <Link href="/forgot-password" className="text-gray-400 hover:text-white text-sm transition-colors">
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           {/* Divider */}
